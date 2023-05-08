@@ -48,6 +48,8 @@ fs.readdir('./06-build-page/styles', (error, files) => {
     return file.split('.')[1] === 'css';
   });
 
+  [cssFiles[0], cssFiles[1], cssFiles[2]] = [cssFiles[1], cssFiles[2], cssFiles[0]];
+
   const stylesContainer = [];
 
   cssFiles.forEach(file => {
