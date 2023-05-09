@@ -8,37 +8,42 @@ fs.mkdir(projectDistPath, (error) => {
 });
 
 const templatePath = './06-build-page/template.html';
-const headerPath = './06-build-page/components/header.html';
-const articlesPath = './06-build-page/components/articles.html';
-const footerPath = './06-build-page/components/footer.html';
+const componentsPath = './06-build-page/components';
 const indexPath = './06-build-page/project-dist/index.html';
+
+
 
 fs.readFile(templatePath, 'utf8', (error, data) => {
   if (error) return console.error(error.message);
 
   const templateData = data;
+  const pattern = /{{(.*?)}}/g;
+  const matches = templateData.match(pattern);
+  const patternNames = matches.map(el => el.replace(/[{}]/g, ''));
 
-  fs.readFile(headerPath, 'utf8', (error, header) => {
+  fs.readdir(componentsPath, (error, files) => {
     if (error) return console.error(error.message);
 
-    const templateHeader = templateData.replace('{{header}}', header);
+    let newTemplateData = templateData;
 
-    fs.readFile(articlesPath, 'utf8', (error, articles) => {
-        if (error) return console.error(error.message);
+    files.forEach(file => {
 
-        const templateHeaderArticles = templateHeader.replace('{{articles}}', articles);
+      if (patternNames.includes(file.split('.')[0])) {
+        fs.readFile(`./06-build-page/components/${file}`, 'utf8', (error, fileContent) => {
+          if (error) return console.error(error.message);
+          const index = matches.indexOf(`{{${file.split('.')[0]}}}`)
 
-        fs.readFile(footerPath, 'utf8', (error, footer) => {
+          newTemplateData = newTemplateData.replace(`${matches[index]}`, fileContent);
+
+          fs.writeFile(indexPath, newTemplateData, (error) => {
             if (error) return console.error(error.message);
+          })
 
-            const templateHeaderArticlesFooter = templateHeaderArticles.replace('{{footer}}', footer);
+        });
+      }
 
-            fs.writeFile(indexPath, templateHeaderArticlesFooter, (error) => {
-                if (error) return console.error(error.message);
-            })
-        })
-    })
-  })
+    });
+  });
 });
 
 fs.readdir('./06-build-page/styles', (error, files) => {
@@ -47,8 +52,6 @@ fs.readdir('./06-build-page/styles', (error, files) => {
   const cssFiles = files.filter(file => {
     return file.split('.')[1] === 'css';
   });
-
-  [cssFiles[0], cssFiles[1], cssFiles[2]] = [cssFiles[1], cssFiles[2], cssFiles[0]];
 
   const stylesContainer = [];
 
@@ -73,56 +76,27 @@ fsPromises.mkdir('./06-build-page/project-dist/assets', { recursive: true })
   .then()
   .catch(error => console.error(error.message));
 
-fsPromises.mkdir('./06-build-page/project-dist/assets/fonts', { recursive: true })
-  .then()
-  .catch(error => console.error(error.message));
-
-fs.readdir('./06-build-page/assets/fonts', (error, files) => {
+fs.readdir('./06-build-page/assets', (error, folders) => {
   if (error) return console.error(error.message);
 
-  files.forEach(file => {
-    const fontsFolder = `./06-build-page/assets/fonts/${file}`;
-    const fontsCopyFolder = `./06-build-page/project-dist/assets/fonts/${file}`;
+  folders.forEach(folder => {
 
-    fs.copyFile(fontsFolder, fontsCopyFolder, (error) => {
+    fsPromises.mkdir(`./06-build-page/project-dist/assets/${folder}`, { recursive: true })
+      .then()
+      .catch(error => console.error(error.message));
+
+    fs.readdir(`./06-build-page/assets/${folder}`, (error, files) => {
       if (error) return console.error(error.message);
-    });
 
-  });
-});
+      files.forEach(file => {
+        const filesFolder = `./06-build-page/assets/${folder}/${file}`;
+        const filesCopyFolder = `./06-build-page/project-dist/assets/${folder}/${file}`;
 
-fsPromises.mkdir('./06-build-page/project-dist/assets/img', { recursive: true })
-  .then()
-.catch(error => console.error(error.message));
+        fs.copyFile(filesFolder, filesCopyFolder, (error) => {
+          if (error) return console.error(error.message);
+        });
 
-fs.readdir('./06-build-page/assets/img', (error, files) => {
-  if (error) return console.error(error.message);
-
-  files.forEach(file => {
-    const imgFolder = `./06-build-page/assets/img/${file}`;
-    const imgCopyFolder = `./06-build-page/project-dist/assets/img/${file}`;
-
-    fs.copyFile(imgFolder, imgCopyFolder, (error) => {
-      if (error) return console.error(error.message);
-    });
-
-  });
-});
-
-fsPromises.mkdir('./06-build-page/project-dist/assets/svg', { recursive: true })
-  .then()
-  .catch(error => console.error(error.message));
-
-fs.readdir('./06-build-page/assets/svg', (error, files) => {
-  if (error) return console.error(error.message);
-
-    files.forEach(file => {
-      const svgFolder = `./06-build-page/assets/svg/${file}`;
-      const svgCopyFolder = `./06-build-page/project-dist/assets/svg/${file}`;
-
-      fs.copyFile(svgFolder, svgCopyFolder, (error) => {
-        if (error) return console.error(error.message);
       });
-
+    });
   });
 });
